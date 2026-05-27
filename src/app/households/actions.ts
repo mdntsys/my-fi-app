@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { sendInvitationEmail } from "@/lib/email";
 
 export async function createHousehold(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -40,12 +42,46 @@ export async function inviteToHousehold(
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { error } = await supabase.from("household_invitations").insert({
-    household_id: householdId,
-    email,
-    invited_by: user.id,
-  });
-  if (error) throw new Error(error.message);
+  const { data: invitation, error } = await supabase
+    .from("household_invitations")
+    .insert({
+      household_id: householdId,
+      email,
+      invited_by: user.id,
+    })
+    .select("token, household_id")
+    .single();
+  if (error || !invitation) throw new Error(error?.message ?? "insert failed");
+
+  // Best-effort email send; failure is non-fatal — owner can still copy the link
+  try {
+    const [{ data: householdRow }, { data: profileRow }, hdrs] =
+      await Promise.all([
+        supabase
+          .from("households")
+          .select("name")
+          .eq("id", householdId)
+          .maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("display_name, email")
+          .eq("id", user.id)
+          .maybeSingle(),
+        headers(),
+      ]);
+    const proto = hdrs.get("x-forwarded-proto") ?? "https";
+    const host = hdrs.get("host") ?? "www.my-fi-app.com";
+    const inviterName =
+      profileRow?.display_name ?? profileRow?.email ?? user.email ?? "Someone";
+    await sendInvitationEmail({
+      to: email,
+      householdName: householdRow?.name ?? "a household",
+      inviterName,
+      acceptUrl: `${proto}://${host}/invitations/${invitation.token}`,
+    });
+  } catch {
+    // intentional — UI still shows the copy-link fallback
+  }
 
   revalidatePath(`/households/${householdId}`);
 }

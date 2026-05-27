@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatUsd, formatDate, titleCase } from "@/lib/format";
+import CategorySelect from "@/components/CategorySelect";
 
 export default async function RecentTransactions() {
   const supabase = await createClient();
@@ -26,15 +27,19 @@ export default async function RecentTransactions() {
     <ul className="divide-y divide-line rounded-2xl border border-line bg-surface">
       {data.map((t) => {
         const rawAccount = t.accounts as unknown;
-        const accountObj = Array.isArray(rawAccount) ? rawAccount[0] : rawAccount;
+        const accountObj = Array.isArray(rawAccount)
+          ? rawAccount[0]
+          : rawAccount;
         const account = accountObj as { name: string; mask: string | null } | null;
-        const category = t.category_override ?? t.category_primary;
+        const category =
+          (t.category_override as string | null) ??
+          (t.category_primary as string | null);
         return (
           <li
             key={t.id}
             className="flex items-center justify-between gap-3 px-4 py-3"
           >
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-ink">
                 {t.merchant_name ?? t.name}
                 {t.pending && (
@@ -43,16 +48,27 @@ export default async function RecentTransactions() {
                   </span>
                 )}
               </div>
-              <div className="text-xs text-ink-muted">
-                {formatDate(t.date)}
-                {category ? ` · ${titleCase(category)}` : ""}
-                {account
-                  ? ` · ${account.name}${account.mask ? ` ••${account.mask}` : ""}`
-                  : ""}
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                <span>{formatDate(t.date)}</span>
+                {account && (
+                  <span>
+                    · {account.name}
+                    {account.mask ? ` ••${account.mask}` : ""}
+                  </span>
+                )}
+                <CategorySelect
+                  transactionId={t.id}
+                  current={t.category_override as string | null}
+                />
+                {!t.category_override && category && (
+                  <span className="text-ink-faint">
+                    ({titleCase(category)} from Plaid)
+                  </span>
+                )}
               </div>
             </div>
             <div
-              className={`text-sm font-medium ${
+              className={`shrink-0 text-sm font-medium ${
                 Number(t.amount) < 0 ? "text-success" : "text-ink"
               }`}
             >

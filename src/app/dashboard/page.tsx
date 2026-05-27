@@ -16,6 +16,13 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const displayName = profile?.display_name ?? user.email;
+
   return (
     <main className="flex flex-1 flex-col px-6 py-10">
       <div className="mx-auto w-full max-w-4xl">
@@ -26,12 +33,24 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/accounts"
+              className="text-sm text-ink-muted hover:text-primary"
+            >
+              Accounts
+            </Link>
+            <Link
               href="/households"
               className="text-sm text-ink-muted hover:text-primary"
             >
               Households
             </Link>
-            <span className="text-sm text-ink-muted">{user.email}</span>
+            <Link
+              href="/settings"
+              className="text-sm text-ink-muted hover:text-primary"
+            >
+              Settings
+            </Link>
+            <span className="text-sm text-ink-muted">{displayName}</span>
             <SignOutButton />
           </div>
         </header>

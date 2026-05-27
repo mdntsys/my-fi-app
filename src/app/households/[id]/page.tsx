@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { inviteToHousehold, leaveHousehold } from "../actions";
 import InviteLinkCopier from "@/components/InviteLinkCopier";
+import HouseholdBudgets from "@/components/HouseholdBudgets";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,13 @@ export default async function HouseholdDetailPage({
     .eq("household_id", id)
     .is("accepted_at", null)
     .order("created_at", { ascending: false });
+
+  const { data: assignedAccounts } = await supabase
+    .from("account_household_assignments")
+    .select(
+      "account_id, accounts(id, name, mask, current_balance, plaid_items(institution_name))",
+    )
+    .eq("household_id", id);
 
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
@@ -110,6 +118,74 @@ export default async function HouseholdDetailPage({
               );
             })}
           </ul>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold">Accounts in this household</h2>
+          {assignedAccounts && assignedAccounts.length > 0 ? (
+            <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-surface">
+              {assignedAccounts.map((aha) => {
+                const rawAccount = aha.accounts as unknown;
+                const accObj = Array.isArray(rawAccount)
+                  ? rawAccount[0]
+                  : rawAccount;
+                const acc = accObj as {
+                  id: string;
+                  name: string;
+                  mask: string | null;
+                  current_balance: number | null;
+                  plaid_items:
+                    | { institution_name: string | null }
+                    | { institution_name: string | null }[]
+                    | null;
+                } | null;
+                if (!acc) return null;
+                const rawInst = acc.plaid_items as unknown;
+                const instObj = Array.isArray(rawInst) ? rawInst[0] : rawInst;
+                const inst = instObj as {
+                  institution_name: string | null;
+                } | null;
+                return (
+                  <li
+                    key={aha.account_id}
+                    className="flex items-center justify-between px-4 py-3"
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-ink">
+                        {acc.name}
+                        {acc.mask ? (
+                          <span className="ml-2 text-xs text-ink-faint">
+                            ••{acc.mask}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="text-xs text-ink-muted">
+                        {inst?.institution_name ?? "Unknown"}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-ink-muted">
+              No accounts assigned. Assign accounts from{" "}
+              <Link href="/accounts" className="text-primary underline">
+                /accounts
+              </Link>
+              .
+            </p>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold">Monthly budgets</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Strict monthly reset. Compared against spending on the dashboard.
+          </p>
+          <div className="mt-3">
+            <HouseholdBudgets householdId={id} isOwner={isOwner} />
+          </div>
         </section>
 
         {isOwner && (
