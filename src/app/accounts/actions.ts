@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { plaid } from "@/lib/plaid";
+import { syncPlaidItem, type PlaidItemRow } from "@/lib/sync";
 
 export async function toggleAccountHousehold(
   accountId: string,
@@ -55,19 +56,46 @@ export async function disconnectItem(itemId: string): Promise<void> {
     throw new Error("item not found");
   }
 
-  // Best-effort revoke on Plaid side; ignore failures so DB cleanup still proceeds
   try {
     await plaid.itemRemove({ access_token: item.access_token });
   } catch {
-    // intentional
+    // best-effort
   }
 
-  // Cascades delete accounts, transactions, sync state, assignments
   const { error } = await supabase
     .from("plaid_items")
     .delete()
     .eq("id", item.id);
   if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/accounts");
+}
+
+export async function syncItemNow(itemId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const { data: item, error } = await supabase
+    .from("plaid_items")
+    .select("id, user_id, access_token")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!item || item.user_id !== user.id) throw new Error("item not found");
+
+  try {
+    await syncPlaidItem(supabase, item as PlaidItemRow);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await supabase
+      .from("plaid_sync_state")
+      .upsert({ item_id: item.id, last_error: message });
+    throw new Error(message);
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/accounts");

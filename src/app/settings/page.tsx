@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateDisplayName } from "./actions";
+import SharedHeader from "@/components/SharedHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -19,22 +19,13 @@ export default async function SettingsPage() {
     .maybeSingle();
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-10">
-      <div className="mx-auto w-full max-w-xl">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-7 rounded-full bg-primary" />
-            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          </div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-ink-muted hover:text-primary"
-          >
-            ← Dashboard
-          </Link>
-        </header>
+    <>
+      <SharedHeader />
+      <main className="flex flex-1 flex-col px-6 py-10">
+        <div className="mx-auto w-full max-w-xl">
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
 
-        <section className="mt-10">
+          <section className="mt-8">
           <h2 className="text-lg font-semibold">Profile</h2>
           <form
             action={updateDisplayName}
@@ -70,8 +61,9 @@ export default async function SettingsPage() {
               Save
             </button>
           </form>
-        </section>
-      </div>
-    </main>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

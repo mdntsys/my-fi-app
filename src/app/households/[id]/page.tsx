@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { inviteToHousehold, leaveHousehold } from "../actions";
 import InviteLinkCopier from "@/components/InviteLinkCopier";
 import HouseholdBudgets from "@/components/HouseholdBudgets";
+import SharedHeader from "@/components/SharedHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -68,24 +69,23 @@ export default async function HouseholdDetailPage({
   const leaveAction = leaveHousehold.bind(null, id);
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-10">
-      <div className="mx-auto w-full max-w-3xl">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-7 rounded-full bg-primary" />
+    <>
+      <SharedHeader />
+      <main className="flex flex-1 flex-col px-6 py-10">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold tracking-tight">
               {household.name}
             </h1>
+            <Link
+              href="/households"
+              className="text-sm text-ink-muted hover:text-primary"
+            >
+              ← Households
+            </Link>
           </div>
-          <Link
-            href="/households"
-            className="text-sm text-ink-muted hover:text-primary"
-          >
-            ← Households
-          </Link>
-        </header>
 
-        <section className="mt-10">
+          <section className="mt-8">
           <h2 className="text-lg font-semibold">Members</h2>
           <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-surface">
             {(members ?? []).map((m) => {
@@ -241,9 +241,10 @@ export default async function HouseholdDetailPage({
                 </ul>
               </div>
             )}
-          </section>
-        )}
-      </div>
-    </main>
+            </section>
+          )}
+        </div>
+      </main>
+    </>
   );
 }
