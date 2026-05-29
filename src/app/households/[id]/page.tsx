@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { inviteToHousehold, leaveHousehold } from "../actions";
 import InviteLinkCopier from "@/components/InviteLinkCopier";
-import HouseholdBudgets from "@/components/HouseholdBudgets";
 import SharedHeader from "@/components/SharedHeader";
 
 export const dynamic = "force-dynamic";
@@ -181,11 +180,12 @@ export default async function HouseholdDetailPage({
         <section className="mt-10">
           <h2 className="text-lg font-semibold">Monthly budgets</h2>
           <p className="mt-1 text-sm text-ink-muted">
-            Strict monthly reset. Compared against spending on the dashboard.
+            Budgets are edited on the{" "}
+            <Link href="/budget" className="text-primary underline">
+              Budget page
+            </Link>
+            .
           </p>
-          <div className="mt-3">
-            <HouseholdBudgets householdId={id} isOwner={isOwner} />
-          </div>
         </section>
 
         {isOwner && (

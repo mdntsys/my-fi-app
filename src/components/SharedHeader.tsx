@@ -18,7 +18,7 @@ export default async function SharedHeader() {
   return (
     <div className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/budget" className="flex items-center gap-2">
           <div className="size-7 rounded-full bg-primary" />
           <span className="text-lg font-semibold tracking-tight">MyFi</span>
         </Link>

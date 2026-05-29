@@ -8,6 +8,7 @@ import {
 } from "./actions";
 import ReconnectButton from "@/components/ReconnectButton";
 import SharedHeader from "@/components/SharedHeader";
+import LinkAccount from "@/components/LinkAccount";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +88,10 @@ export default async function AccountsPage() {
       <SharedHeader />
       <main className="flex flex-1 flex-col px-6 py-10">
         <div className="mx-auto w-full max-w-3xl">
-          <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
+            <LinkAccount />
+          </div>
 
           <section className="mt-8">
           {items.length === 0 ? (

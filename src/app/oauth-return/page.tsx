@@ -14,6 +14,7 @@ export default function OAuthReturnPage() {
   const [status, setStatus] = useState<string>("Resuming connection…");
   const [error, setError] = useState<string | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- sessionStorage is browser-only; hydrating state on mount is the correct pattern */
   useEffect(() => {
     const storedToken = sessionStorage.getItem(TOKEN_KEY);
     const storedItem = sessionStorage.getItem(ITEM_KEY);
@@ -26,6 +27,7 @@ export default function OAuthReturnPage() {
     setLinkToken(storedToken);
     setExistingItemId(storedItem);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const onSuccess = useCallback(
     async (public_token: string) => {

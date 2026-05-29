@@ -77,8 +77,11 @@ export default function UserMenu({
             )}
           </div>
           <nav role="none" className="py-1">
-            <Link href="/dashboard" className={itemClass} onClick={() => setOpen(false)}>
-              Dashboard
+            <Link href="/budget" className={itemClass} onClick={() => setOpen(false)}>
+              Budget
+            </Link>
+            <Link href="/transactions" className={itemClass} onClick={() => setOpen(false)}>
+              Transactions
             </Link>
             <Link href="/accounts" className={itemClass} onClick={() => setOpen(false)}>
               Accounts

@@ -30,7 +30,15 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  if (!user && path.startsWith("/dashboard")) {
+  const authedPrefixes = [
+    "/budget",
+    "/transactions",
+    "/accounts",
+    "/households",
+    "/settings",
+    "/dashboard",
+  ];
+  if (!user && authedPrefixes.some((p) => path.startsWith(p))) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
