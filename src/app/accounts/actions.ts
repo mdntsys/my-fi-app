@@ -19,21 +19,15 @@ export async function toggleAccountHousehold(
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  if (assign) {
-    const { error } = await supabase
-      .from("account_household_assignments")
-      .insert({ account_id: accountId, household_id: householdId });
-    if (error && !error.message.includes("duplicate")) {
-      throw new Error(error.message);
-    }
-  } else {
-    const { error } = await supabase
-      .from("account_household_assignments")
-      .delete()
-      .eq("account_id", accountId)
-      .eq("household_id", householdId);
-    if (error) throw new Error(error.message);
-  }
+  // Routed through a SECURITY DEFINER RPC for the same reason as
+  // createHousehold: the table's WITH CHECK uses direct auth.uid() which is
+  // rejected even for valid authenticated callers.
+  const { error } = await supabase.rpc("set_account_household_assignment", {
+    p_account_id: accountId,
+    p_household_id: householdId,
+    p_assigned: assign,
+  });
+  if (error) throw new Error(error.message);
 
   revalidatePath("/accounts");
   revalidatePath(`/households/${householdId}`);
