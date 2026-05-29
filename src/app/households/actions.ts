@@ -16,17 +16,18 @@ export async function createHousehold(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { data, error } = await supabase
-    .from("households")
-    .insert({ name, created_by: user.id })
-    .select("id")
-    .single();
-  if (error || !data) {
+  // Routed through a SECURITY DEFINER RPC because the direct INSERT was
+  // rejected by RLS on production even though created_by = auth.uid(). The
+  // RPC reads auth.uid() server-side and bypasses the WITH CHECK.
+  const { data: householdId, error } = await supabase.rpc("create_household", {
+    p_name: name,
+  });
+  if (error || !householdId) {
     throw new Error(error?.message ?? "Failed to create household");
   }
 
   revalidatePath("/households");
-  redirect(`/households/${data.id}`);
+  redirect(`/households/${householdId}`);
 }
 
 export async function inviteToHousehold(
