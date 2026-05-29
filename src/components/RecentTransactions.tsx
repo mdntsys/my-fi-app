@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatUsd, formatDate, titleCase } from "@/lib/format";
+import { formatUsd, formatDate } from "@/lib/format";
 import CategorySelect from "@/components/CategorySelect";
 
 export default async function RecentTransactions() {
@@ -31,9 +31,6 @@ export default async function RecentTransactions() {
           ? rawAccount[0]
           : rawAccount;
         const account = accountObj as { name: string; mask: string | null } | null;
-        const category =
-          (t.category_override as string | null) ??
-          (t.category_primary as string | null);
         return (
           <li
             key={t.id}
@@ -59,12 +56,8 @@ export default async function RecentTransactions() {
                 <CategorySelect
                   transactionId={t.id}
                   current={t.category_override as string | null}
+                  plaidCategory={t.category_primary as string | null}
                 />
-                {!t.category_override && category && (
-                  <span className="text-ink-faint">
-                    ({titleCase(category)} from Plaid)
-                  </span>
-                )}
               </div>
             </div>
             <div

@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     language: "en",
     access_token: item.access_token,
     webhook: process.env.PLAID_WEBHOOK_URL || undefined,
+    redirect_uri: process.env.PLAID_REDIRECT_URI || undefined,
   });
 
   return NextResponse.json({ link_token: response.data.link_token });

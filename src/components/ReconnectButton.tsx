@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePlaidLink } from "react-plaid-link";
+import { usePlaidLink, type PlaidLinkOnExitMetadata, type PlaidLinkError } from "react-plaid-link";
 import { useRouter } from "next/navigation";
 
 type Status = "loading" | "ready" | "repairing" | "syncing" | "done" | "error";
+
+const TOKEN_KEY = "plaid_link_token";
+const ITEM_KEY = "plaid_link_item_id";
 
 export default function ReconnectButton({ itemId }: { itemId: string }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
@@ -25,6 +28,8 @@ export default function ReconnectButton({ itemId }: { itemId: string }) {
         if (cancelled) return;
         if (data.link_token) {
           setLinkToken(data.link_token);
+          sessionStorage.setItem(TOKEN_KEY, data.link_token);
+          sessionStorage.setItem(ITEM_KEY, itemId);
           setStatus("ready");
         } else {
           setStatus("error");
@@ -50,6 +55,8 @@ export default function ReconnectButton({ itemId }: { itemId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ item_id: itemId }),
       });
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(ITEM_KEY);
       setStatus("done");
       router.refresh();
     } catch (e) {
@@ -58,9 +65,21 @@ export default function ReconnectButton({ itemId }: { itemId: string }) {
     }
   }, [itemId, router]);
 
+  const onExit = useCallback(
+    (err: PlaidLinkError | null, metadata: PlaidLinkOnExitMetadata) => {
+      console.log("[Plaid Link reconnect] onExit", { err, metadata });
+      if (err) {
+        setStatus("error");
+        setMessage(`${err.error_code}: ${err.error_message}`);
+      }
+    },
+    [],
+  );
+
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess,
+    onExit,
   });
 
   const disabled =

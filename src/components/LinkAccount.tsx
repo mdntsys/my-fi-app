@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePlaidLink } from "react-plaid-link";
+import { usePlaidLink, type PlaidLinkOnExitMetadata, type PlaidLinkError } from "react-plaid-link";
 import { useRouter } from "next/navigation";
 
 type Status = "loading" | "ready" | "linking" | "syncing" | "done" | "error";
+
+const TOKEN_KEY = "plaid_link_token";
 
 export default function LinkAccount() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
@@ -21,6 +23,7 @@ export default function LinkAccount() {
         if (cancelled) return;
         if (data.link_token) {
           setLinkToken(data.link_token);
+          sessionStorage.setItem(TOKEN_KEY, data.link_token);
           setStatus("ready");
         } else {
           setStatus("error");
@@ -61,6 +64,7 @@ export default function LinkAccount() {
         body: JSON.stringify({ item_id: data.item_id }),
       });
 
+      sessionStorage.removeItem(TOKEN_KEY);
       setStatus("done");
       setMessage(`Connected ${data.institution ?? "account"}.`);
       router.refresh();
@@ -68,9 +72,26 @@ export default function LinkAccount() {
     [router],
   );
 
+  const onExit = useCallback(
+    (err: PlaidLinkError | null, metadata: PlaidLinkOnExitMetadata) => {
+      console.log("[Plaid Link] onExit", { err, metadata });
+      if (err) {
+        setStatus("error");
+        setMessage(`${err.error_code}: ${err.error_message}`);
+      }
+    },
+    [],
+  );
+
+  const onEvent = useCallback((eventName: string, metadata: unknown) => {
+    console.log("[Plaid Link] event", eventName, metadata);
+  }, []);
+
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess,
+    onExit,
+    onEvent,
   });
 
   const disabled =

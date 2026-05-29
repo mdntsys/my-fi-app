@@ -20,6 +20,7 @@ export async function POST() {
     country_codes: [CountryCode.Us],
     language: "en",
     webhook: process.env.PLAID_WEBHOOK_URL || undefined,
+    redirect_uri: process.env.PLAID_REDIRECT_URI || undefined,
   });
 
   return NextResponse.json({ link_token: response.data.link_token });
